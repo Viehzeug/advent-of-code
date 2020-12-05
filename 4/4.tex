@@ -1,0 +1,180 @@
+\documentclass{article}
+\usepackage{tikz}
+\usepackage{xstring}
+% \usepackage{etoolbox}
+\usepackage{xparse}
+
+\ExplSyntaxOn
+\tl_new:N \l_data
+
+\int_new:N \l_cnt
+\int_new:N \l_cnt_corr_taskA
+\int_new:N \l_cnt_corr_taskB
+\int_zero_new:N \l_cnt_corr_data_taskA
+\int_zero_new:N \l_cnt_corr_data_taskB
+\int_zero_new:N \l_cnt_data
+
+\seq_new:N \l_tmp
+\seq_new:N \l_keys
+\seq_new:N \l_values
+\seq_new:N \l_fields
+\tl_new:N \l_key
+\tl_new:N \l_value
+\str_new:N \l_value_str
+
+\tl_const:Nx \l_field_byr {\tl_to_str:n {byr}}
+\tl_const:Nx \l_field_iyr {\tl_to_str:n {iyr}}
+\tl_const:Nx \l_field_eyr {\tl_to_str:n {eyr}}
+\tl_const:Nx \l_field_hgt {\tl_to_str:n {hgt}}
+\tl_const:Nx \l_field_hcl {\tl_to_str:n {hcl}}
+\tl_const:Nx \l_field_ecl {\tl_to_str:n {ecl}}
+\tl_const:Nx \l_field_pid {\tl_to_str:n {pid}}
+
+
+\cs_generate_variant:Nn \tl_if_in:nnT { nfT }
+\cs_generate_variant:Nn \regex_match:nnTF { nxTF }
+\cs_generate_variant:Nn \regex_match:nnT { nxT }
+\cs_generate_variant:Nn \int_set:Nn { Nx }
+
+
+\cs_new:Npn \cnt
+{
+  % \l_data
+
+
+  \seq_set_split:NnV \l_tmp { ~ } \l_data
+  \seq_clear:N \l_keys
+  \seq_clear:N \l_values
+
+  \int_zero:N \l_cnt_corr_taskA
+  \int_zero:N \l_cnt_corr_taskB
+  
+  \seq_map_inline:Nn \l_tmp {
+    \seq_put_right:Nx \l_keys {\tl_range:nnn { ##1 } {1} {3}}
+    \seq_put_right:Nx \l_values {\tl_range:nnn { ##1 } {5} {\tl_count:n { ## 1 } }}
+  }
+
+    \int_step_inline:nnn {1} {\seq_count:N \l_keys} {
+      \tl_set:Nx \l_key {\seq_item:Nn \l_keys {##1} }
+      \tl_set:Nx \l_value {\seq_item:Nn \l_values {##1} }
+      %\l_key
+      %\space
+      \tl_case:NnT \l_key {
+        \l_field_byr {
+          \int_compare:nT {
+            1920     <=
+            \l_value <=
+            2002
+          } {
+            \int_incr:N \l_cnt_corr_taskB
+          }
+        }
+        \l_field_iyr {
+          \int_compare:nT {
+            2010     <=
+            \l_value <=
+            2020
+          } {
+            \int_incr:N \l_cnt_corr_taskB
+          }
+        }
+        \l_field_eyr {
+          \int_compare:nT {
+            2020     <=
+            \l_value <=
+            2030
+          } {
+            \int_incr:N \l_cnt_corr_taskB
+          }
+        }
+        \l_field_hgt {
+          \regex_match:nxT {\d{3}cm} {\l_value} {
+            \str_set:Nx \l_value_str {\l_value}
+            \str_replace_once:Nnn \l_value_str {cm} {}
+            \int_compare:nT {
+              150      <=
+              \l_value_str <=
+              193
+            } {
+              \int_incr:N \l_cnt_corr_taskB
+            }
+          }
+          \regex_match:nxT {\d{2}in} {\l_value} {
+            \str_set:Nx \l_value_str {\l_value}
+            \str_replace_once:Nnn \l_value_str {in} {}
+            \int_compare:nT {
+              59      <=
+              \l_value_str <=
+              76
+            } {
+              \int_incr:N \l_cnt_corr_taskB
+            }
+          }
+        }
+        \l_field_hcl {
+          \regex_match:nxT { \#[0-9a-f]{6} } {\l_value} {
+            \int_incr:N \l_cnt_corr_taskB
+          }
+        }
+        \l_field_ecl {
+          \regex_match:nxT { amb|blu|brn|gry|grn|hzl|oth } {\l_value} {
+            \int_incr:N \l_cnt_corr_taskB
+          }
+        }
+        \l_field_pid {
+          \regex_match:nxT { \A\d{9}\Z } {\l_value} {
+            \int_incr:N \l_cnt_corr_taskB
+          }
+        }
+      } {
+        \int_incr:N \l_cnt_corr_taskA
+      }
+      %\space
+    }
+    %\newline
+    
+  \int_compare:nNnTF {7} = {\l_cnt_corr_taskA} {
+    \int_incr:N \l_cnt_corr_data_taskA
+    %\int_to_arabic:n { \l_cnt } \int_to_arabic:n { \l_cnt_corr } Good: \tl_to_str:N \l_data \newline
+  } {
+    %\int_to_arabic:n { \l_cnt } \int_to_arabic:n { \l_cnt_corr } Bad: \tl_to_str:N \l_data \newline
+  }
+
+
+  \int_compare:nNnT {7} = {\l_cnt_corr_taskB} {
+    \int_incr:N \l_cnt_corr_data_taskB
+  }
+
+  \int_incr:N \l_cnt_data
+  
+}
+
+\NewDocumentCommand{\solve}{}
+ {
+   \ior_open:Nn \my_input_stream { in.txt }
+
+   \ior_str_map_inline:Nn \my_input_stream {
+     \tl_if_blank:nTF { ##1 } {
+       \cnt
+       \tl_clear:N \l_data
+     } {
+       \tl_put_right:Nx \l_data { ##1 }
+       \tl_put_right:Nx \l_data { ~ }
+     }
+   }  
+   \ior_close:N \my_input_stream
+   \cnt
+
+   Valid~Passports,~Task~1: ~ \int_to_arabic:n { \l_cnt_corr_data_taskA }\\
+   Valid~Passports,~Task~2: ~ \int_to_arabic:n { \l_cnt_corr_data_taskB }\\
+   Total ~ Passports: ~ \int_to_arabic:n { \l_cnt_data }\\
+ }
+\ior_new:N \my_input_stream
+\ExplSyntaxOff
+
+\begin{document}
+
+\section{Day 4}
+\solve
+
+\end{document}
