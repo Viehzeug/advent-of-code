@@ -88,7 +88,7 @@
           }
         }
         \l_field_hgt {
-          \regex_match:nxT {\d{3}cm} {\l_value} {
+          \regex_match:nxT {\A\d{3}cm\Z} {\l_value} {
             \str_set:Nx \l_value_str {\l_value}
             \str_replace_once:Nnn \l_value_str {cm} {}
             \int_compare:nT {
@@ -99,7 +99,7 @@
               \int_incr:N \l_cnt_corr_taskB
             }
           }
-          \regex_match:nxT {\d{2}in} {\l_value} {
+          \regex_match:nxT {\A\d{2}in\Z} {\l_value} {
             \str_set:Nx \l_value_str {\l_value}
             \str_replace_once:Nnn \l_value_str {in} {}
             \int_compare:nT {
@@ -112,12 +112,12 @@
           }
         }
         \l_field_hcl {
-          \regex_match:nxT { \#[0-9a-f]{6} } {\l_value} {
+          \regex_match:nxT { \A\#[0-9a-f]{6}\Z } {\l_value} {
             \int_incr:N \l_cnt_corr_taskB
           }
         }
         \l_field_ecl {
-          \regex_match:nxT { amb|blu|brn|gry|grn|hzl|oth } {\l_value} {
+          \regex_match:nxT { \A(amb|blu|brn|gry|grn|hzl|oth)\Z } {\l_value} {
             \int_incr:N \l_cnt_corr_taskB
           }
         }
